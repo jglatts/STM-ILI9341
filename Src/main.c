@@ -1,25 +1,67 @@
 #include "main.h"
 #include "ILI9341_STM32_Driver.h"
-#include "birds.h"	// think is is too much
+#include "birds.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
 int size;
 
+uint16_t colors[] = {
+	BLACK,
+	NAVY,
+	DARKGREEN,
+	DARKCYAN,
+	MAROON,
+	PURPLE,
+	OLIVE,
+	LIGHTGREY,
+	DARKGREY,
+	BLUE,
+	GREEN,
+	RED,
+	MAGENTA,
+	YELLOW,
+	WHITE,
+	ORANGE,
+	GREENYELLOW,
+	PINK
+};
+
+const char* words[] = {
+		"Gang Gang!",
+		"Ya Mate!",
+		"JDG 2021!",
+		"Jim Croce!",
+		"Maury!",
+		"Fuck Ya!"
+};
+
 int main(void)
 {
   HAL_Init();
+  size = sizeof(birds) / sizeof(birds[0]);
   SystemClock_Config();
   MX_GPIO_Init();
   MX_SPI1_Init();
   ILI9341_Init();
+  ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+  ILI9341_Fill_Screen(CYAN);
   //LCD_Test_Image();
-  LCD_Draw_Circles();
+  //LCD_Draw_Circles();
+  ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+  LCD_Draw_Rand_Smiley();
+  /*
+  LCD_Draw_Smiley(10, 20);
+  LCD_Draw_Smiley(30, 50);
+  LCD_Draw_Smiley(50, 80);
+  LCD_Draw_Smiley(70, 110);
+  */
   while (1)
   {
 	  // nothing for now xD
 	  // add an interrupt just for fun xD
+	  // maybe an interrupt that clears screen
   }
 }
 
@@ -90,29 +132,61 @@ void LCD_Draw_Circles(void)
 	  srand((unsigned)time(NULL));
 	  ILI9341_Fill_Screen(CYAN);
 	  ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	  uint16_t colors[] = {0x03E0, 0x780F, 0xFFE0, 0xAFE5, 0xF81F};
-	  for (uint8_t i = 0; i < 200; ++i)
+	  // replace these with the macro names
+	  while (1)
 	  {
-		  uint16_t x_pos = rand() % ILI9341_SCREEN_WIDTH;
-		  uint16_t y_pos = rand() % ILI9341_SCREEN_HEIGHT;
-		  uint16_t radius = (rand() % MAX_RADIUS) + 1;
-		  uint8_t  color = rand() % 5;
-		  // add some random color to use
-		  ILI9341_Draw_Filled_Circle(x_pos, y_pos, radius, colors[color]);
+		  for (uint8_t i = 0; i < 100; ++i)
+		  {
+			  int r = rand();
+			  uint16_t x_pos = r % ILI9341_SCREEN_WIDTH;
+			  uint16_t y_pos = r % ILI9341_SCREEN_HEIGHT;
+			  uint16_t radius = (r % MAX_RADIUS) + 1;
+			  uint8_t  color = r % 19;
+			  uint8_t  msg = r % 6;
+			  // add some random color to use
+			  ILI9341_Draw_Filled_Circle(x_pos, y_pos, radius, colors[color]);
+			  ILI9341_Draw_Text(words[msg], r % 300, r % 200, colors[color], (r % 6) + 1, CYAN);
+		  }
+		  ILI9341_Fill_Screen(CYAN);
+		  //ILI9341_Draw_Text("Ya Mate!", 50, 50, BLACK, 4, CYAN);
 	  }
-	  ILI9341_Draw_Text("Ya Mate!", 50, 50, BLACK, 4, CYAN);
 }
 
 void LCD_Test_Image()
 {
+	// get images working ;)
 	ILI9341_Fill_Screen(WHITE);
-	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+	ILI9341_Set_Rotation(SCREEN_VERTICAL_1);
 	ILI9341_Draw_Text("RGB Picture", 10, 10, BLACK, 1, WHITE);
 	ILI9341_Draw_Text("SMILEY", 10, 20, BLACK, 1, WHITE);
 	HAL_Delay(2000);
-	ILI9341_Draw_Image((const char*)birds, SCREEN_HORIZONTAL_1);
-	ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
-	HAL_Delay(10000);
+	//ILI9341_Fill_Screen(WHITE);
+	ILI9341_Draw_Image((const char*)birds, SCREEN_VERTICAL_1);
+	//ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+	//HAL_Delay(10000);
+}
+
+void LCD_Draw_Smiley(int x_pos, int y_pos, uint16_t color)
+{
+	//ILI9341_Fill_Screen(CYAN);
+	//ILI9341_Set_Rotation(SCREEN_HORIZONTAL_1);
+	ILI9341_Draw_Filled_Circle(x_pos, y_pos, 5, color);
+	ILI9341_Draw_Filled_Circle(x_pos + 15, y_pos, 5, color);
+	ILI9341_Draw_Filled_Circle_Half(x_pos + 8, y_pos + 15, 9, color);
+}
+
+void LCD_Draw_Rand_Smiley() {
+	while(1) {
+		int c = rand() % 19;
+		ILI9341_Fill_Screen(colors[c]);
+		for (uint8_t i = 0; i < 30; ++i)
+		{
+			int r = rand();
+			LCD_Draw_Smiley(r % 300, r % 200, colors[r % 19]);
+			ILI9341_Draw_Text(words[r % 6], r % 300, r % 200, colors[r % 19], (r % 6) + 1, colors[c]);
+		}
+		ILI9341_Fill_Screen(colors[c]);
+	}
 }
 
 void LCD_Test(void)
