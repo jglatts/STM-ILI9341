@@ -5,7 +5,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-int size;
+int size, val;
+int check = 0;
 
 uint16_t colors[] = {
 	BLACK,
@@ -59,9 +60,7 @@ int main(void)
   */
   while (1)
   {
-	  // nothing for now xD
-	  // add an interrupt just for fun xD
-	  // maybe an interrupt that clears screen
+
   }
 }
 
@@ -125,6 +124,29 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  GPIO_InitStruct.Pin = GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+  /* EXTI interrupt init*/
+  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if(GPIO_Pin == GPIO_PIN_8) // If The IT Source Is EXTI Line8 (A8 Pin)
+    {
+    	check = 1;
+    	/*
+    	// shorten this guy up
+    	__HAL_GPIO_EXTI_CLEAR_IT(EXTI9_5_IRQn);
+    	ILI9341_Fill_Screen(CYAN);
+    	ILI9341_Draw_Text("INTERRUPTED!", 10, 10, BLACK, 1, CYAN);
+    	for (int i = 0; i < 1000; i++) { } // wait a lil
+    	//__HAL_GPIO_EXTI_CLEAR_IT(EXTI9_5_IRQn);
+		*/
+	}
 }
 
 void LCD_Draw_Circles(void)
@@ -177,15 +199,28 @@ void LCD_Draw_Smiley(int x_pos, int y_pos, uint16_t color)
 
 void LCD_Draw_Rand_Smiley() {
 	while(1) {
+		if (check) {
+			ILI9341_Fill_Screen(CYAN);
+			ILI9341_Draw_Text("INTERRUPTED!", 10, 10, BLACK, 1, CYAN);
+			HAL_Delay(500);
+			check = 0;
+		}
 		int c = rand() % 19;
 		ILI9341_Fill_Screen(colors[c]);
 		for (uint8_t i = 0; i < 30; ++i)
 		{
+			if (check) {
+				ILI9341_Fill_Screen(CYAN);
+				ILI9341_Draw_Text("INTERRUPTED!", 10, 10, BLACK, 1, CYAN);
+				HAL_Delay(500);
+				check = 0;
+			}
 			int r = rand();
 			LCD_Draw_Smiley(r % 300, r % 200, colors[r % 19]);
 			ILI9341_Draw_Text(words[r % 6], r % 300, r % 200, colors[r % 19], (r % 6) + 1, colors[c]);
 		}
 		ILI9341_Fill_Screen(colors[c]);
+		check = 0;
 	}
 }
 
